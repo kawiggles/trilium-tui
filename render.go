@@ -28,25 +28,54 @@ func RenderNote(metadata *Metadata, body string) {
 		return
 	}
 
+	ctx := StyleContext{
+		Bold: false,
+		Italic: false,
+		LinkTarget: "",
+	}
+
 	for _, n := range nodes {
-		traverseTree(n, 0)
+		traverseTree(n, 0, ctx)
 	}
 }
 
-func traverseTree(n *html.Node, depth int) {
-	indent := strings.Repeat("\t", depth)
-
+func traverseTree(n *html.Node, depth int, ctx StyleContext) {
 	switch n.Type {
 	case html.ElementNode:
-		fmt.Printf("%s<%s>\n", indent, n.Data)
+		switch n.Data {
+		case "strong", "b":
+			ctx.Bold = true
+		case "em", "i":
+			ctx.Italic = true
+		case "a":
+			ctx.LinkTarget = getTargetId(n)
+		}
 	case html.TextNode:
 		text := strings.TrimSpace(n.Data)
-		if text != "" {
-			fmt.Printf("%s%s\n", indent, text)
+		if text == "" {
+			emitSpan(text, ctx)
 		}
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		traverseTree(c, depth + 1)
+		traverseTree(c, depth + 1, ctx)
 	}
+}
+
+func getTargetId(n *html.Node) string {
+	for _, attr := range n.Attr {
+		if attr.Key == "href" {
+			return attr.Val
+		}
+	}
+	return ""
+}
+
+type StyleContext struct {
+	Bold bool
+	Italic bool
+	LinkTarget string
+}
+
+func emitSpan(text string, ctx StyleContext) {
 }
