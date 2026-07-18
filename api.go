@@ -1,10 +1,11 @@
 package main
 
-import(
+import (
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -37,8 +38,9 @@ func StartSession() Session {
 	}
 }
 
-func (s *Session) GetRoot() string {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/notes/root/content", s.endpoint), nil)
+func (s *Session) GetNote(noteId string) (string, string) {
+	target := fmt.Sprintf("%s/notes/%s", s.endpoint, noteId)
+	req, err := http.NewRequest(http.MethodGet, target, nil)
 	if err != nil {
 		log.Fatal("Error generating api request headers")
 	}
@@ -47,12 +49,23 @@ func (s *Session) GetRoot() string {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "applciation/json")
 
-	resp, err := s.client.Do(req)
+	resp1, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("Error with API request: %v\n", err)
+		log.Printf("Error getting note metadata: %v\n", err)
+		return "<p>error</p>", "nil"
 	}
-	defer resp.Body.Close()
+	defer resp1.Body.Close()
+	metadata, _ := io.ReadAll(resp1.Body)
 
-	body, _ := io.ReadAll(resp.Body)
-	return string(body)
+	url, _ := url.Parse(fmt.Sprintf("%s/content", target))
+	req.URL = url
+	resp2, err := s.client.Do(req)
+	if err != nil {
+		log.Printf("Error getting note content: %v\n", err)
+		return string(metadata), "nil"
+	}
+	defer resp2.Body.Close()
+	body, _ := io.ReadAll(resp2.Body)
+
+	return string(metadata), string(body)
 }
