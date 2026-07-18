@@ -5,5 +5,5 @@ import(
 
 func main() {
 	session := StartSession()
-	Render(session.GetNote("root"))
+	RenderNote(session.GetNote("root"))
 }

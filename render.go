@@ -9,9 +9,11 @@ import(
 	"golang.org/x/net/html/atom"
 )
 
-func Render(metadata string, body string) {
-	fmt.Println(metadata)
-	fmt.Println(body)
+func RenderNote(metadata *Metadata, body string) {
+	if metadata == nil {
+		log.Printf("Error: no metadata found")
+	}
+	fmt.Println(metadata.Title)
 
 	reader := strings.NewReader(body)
 	context := &html.Node{

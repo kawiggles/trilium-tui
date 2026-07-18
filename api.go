@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -38,8 +39,9 @@ func StartSession() Session {
 	}
 }
 
-func (s *Session) GetNote(noteId string) (string, string) {
+func (s *Session) GetNote(noteId string) (*Metadata, string) {
 	target := fmt.Sprintf("%s/notes/%s", s.endpoint, noteId)
+
 	req, err := http.NewRequest(http.MethodGet, target, nil)
 	if err != nil {
 		log.Fatal("Error generating api request headers")
@@ -52,20 +54,38 @@ func (s *Session) GetNote(noteId string) (string, string) {
 	resp1, err := s.client.Do(req)
 	if err != nil {
 		log.Printf("Error getting note metadata: %v\n", err)
-		return "<p>error</p>", "nil"
+		return nil, "nil"
 	}
 	defer resp1.Body.Close()
-	metadata, _ := io.ReadAll(resp1.Body)
+	data, _ := io.ReadAll(resp1.Body)
+	metadata := new(Metadata)
+	err = json.Unmarshal(data, metadata)
+	if err != nil {
+		log.Printf("Error unmarshaling metadata: %v\n", err)
+		return nil, "nil"
+	}
 
-	url, _ := url.Parse(fmt.Sprintf("%s/content", target))
-	req.URL = url
+	req.URL, _ = url.Parse(fmt.Sprintf("%s/content", target))
 	resp2, err := s.client.Do(req)
 	if err != nil {
 		log.Printf("Error getting note content: %v\n", err)
-		return string(metadata), "nil"
+		return metadata, "nil"
 	}
 	defer resp2.Body.Close()
 	body, _ := io.ReadAll(resp2.Body)
 
-	return string(metadata), string(body)
+	return metadata, string(body)
+}
+
+type Metadata struct {
+	NoteId string
+	IsProtected bool
+	Title string
+	Mime string
+	DateCreated string
+	DateModified string
+	ParentNoteIds []string
+	ChildNoteIds []string
+	ParentBranchIds []string
+	ChildBranchIds []string
 }
