@@ -49,7 +49,7 @@ func (s *Session) GetRoot() string {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		log.Printf("Error with API request: %v", err)
+		log.Printf("Error with API request: %v\n", err)
 	}
 	defer resp.Body.Close()
 

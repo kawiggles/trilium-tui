@@ -1,10 +1,9 @@
 package main
 
-import (
-	"fmt"
+import(
 )
 
 func main() {
 	session := StartSession()
-	fmt.Println(session.GetRoot())
+	Render(session.GetRoot())
 }
